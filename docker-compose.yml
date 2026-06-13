@@ -1,0 +1,27 @@
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ticket_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: event_management
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: ticket_mail
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    environment:
+      MP_MAX_MESSAGES: 500
+
+volumes:
+  pgdata:
