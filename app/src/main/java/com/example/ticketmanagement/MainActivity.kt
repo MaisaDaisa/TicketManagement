@@ -1,47 +1,52 @@
 package com.example.ticketmanagement
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.ticketmanagement.ui.theme.TicketManagementTheme
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            TicketManagementTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+            QRScannerScreen(onScanClick = { startQRScanner() })
         }
+    }
+
+
+
+    private fun startQRScanner() {
+        val scanner = GmsBarcodeScanning.getClient(this)
+
+        scanner.startScan()
+            .addOnSuccessListener { barcode ->
+                val rawValue = barcode.rawValue
+                Log.d("QR_SCANNER_OUTPUT", "Scanned Code: $rawValue")
+            }
+            .addOnFailureListener { e ->
+                Log.e("QR_SCANNER_ERROR", "Scanning failed: ${e.message}")
+            }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TicketManagementTheme {
-        Greeting("Android")
+fun QRScannerScreen(onScanClick: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Button(onClick = onScanClick) {
+            Text(text = "Scan QR Code")
+        }
     }
 }
