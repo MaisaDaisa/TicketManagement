@@ -1,52 +1,60 @@
 package com.example.ticketmanagement
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import com.example.ticketmanagement.data.Ticket
+import com.example.ticketmanagement.data.UserRole
+import com.example.ticketmanagement.ui.components.AppBottomNavigation
+import com.example.ticketmanagement.ui.screens.CreateTicketScreen
+import com.example.ticketmanagement.ui.screens.ScanScreen
+import com.example.ticketmanagement.ui.screens.TicketListScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            QRScannerScreen(onScanClick = { startQRScanner() })
+            MaterialTheme {
+                MainAppContainer()
+            }
         }
-    }
-
-
-
-    private fun startQRScanner() {
-        val scanner = GmsBarcodeScanning.getClient(this)
-
-        scanner.startScan()
-            .addOnSuccessListener { barcode ->
-                val rawValue = barcode.rawValue
-                Log.d("QR_SCANNER_OUTPUT", "Scanned Code: $rawValue")
-            }
-            .addOnFailureListener { e ->
-                Log.e("QR_SCANNER_ERROR", "Scanning failed: ${e.message}")
-            }
     }
 }
 
 @Composable
-fun QRScannerScreen(onScanClick: () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Button(onClick = onScanClick) {
-            Text(text = "Scan QR Code")
+fun MainAppContainer() {
+    var currentRole by remember { mutableStateOf(UserRole.ADMIN) }
+    var currentScreen by remember { mutableStateOf("scan") }
+    val ticketList = remember { mutableStateListOf<Ticket>() }
+
+    Scaffold(
+        bottomBar = {
+            AppBottomNavigation(
+                currentRole = currentRole,
+                currentScreen = currentScreen,
+                onScreenSelected = { currentScreen = it }
+            )
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding)) {
+            when (currentScreen) {
+                "scan" -> ScanScreen(onScanTriggered = {})
+                "create" -> if (currentRole == UserRole.ADMIN) {
+                    CreateTicketScreen(onTicketCreated = { newTicket ->
+                        ticketList.add(newTicket)
+                        currentScreen = "list"
+                    })
+                }
+                "list" -> TicketListScreen(tickets = ticketList)
+            }
         }
     }
 }
