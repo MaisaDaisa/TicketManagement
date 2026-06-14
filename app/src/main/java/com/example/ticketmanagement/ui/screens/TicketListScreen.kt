@@ -42,69 +42,91 @@ fun TicketListScreen(tickets: List<Ticket>) {
 
 @Composable
 fun TicketRowItem(ticket: Ticket) {
-    val cardAlpha = if (ticket.isScanned) 0.6f else 1.0f
+    val cardAlpha = if (ticket.isScanned) 0.5f else 1.0f
+
+    val displayedId = if (ticket.ticketId.length > 20) {
+        "${ticket.ticketId.take(20)}..."
+    } else {
+        ticket.ticketId
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 2.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (ticket.isScanned) {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
             } else {
-                MaterialTheme.colorScheme.surfaceVariant
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
             }
         )
     ) {
-        Column(
+        Row(
             modifier = Modifier
-                .padding(16.dp)
                 .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = "${ticket.firstName} ${ticket.lastName}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = cardAlpha)
-                )
-
-                StatusBadge(isScanned = ticket.isScanned)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
-                        text = ticket.email,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
+                        text = "${ticket.firstName} ${ticket.lastName}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = cardAlpha)
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "ადგილი: ${ticket.seatNumber}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (ticket.isScanned) Color.Gray else MaterialTheme.colorScheme.primary
-                    )
+                    StatusBadge(isScanned = ticket.isScanned)
                 }
 
                 Text(
-                    text = ticket.ticketId,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = cardAlpha)
+                    text = "ID: $displayedId",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
+
+                Text(
+                    text = ticket.email,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = if (ticket.isScanned) {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
+                        } else {
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        },
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "ადგილი",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        text = ticket.seatNumber,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (ticket.isScanned) Color.Gray else MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }
@@ -112,13 +134,13 @@ fun TicketRowItem(ticket: Ticket) {
 
 @Composable
 fun StatusBadge(isScanned: Boolean) {
-    val backgroundColor = if (isScanned) Color(0xFFE57373) else Color(0xFF81C784)
+    val backgroundColor = if (isScanned) Color(0xFFEF5350) else Color(0xFF66BB6A)
     val statusText = if (isScanned) "გამოყენებული" else "აქტიური"
 
     Box(
         modifier = Modifier
             .background(color = backgroundColor, shape = RoundedCornerShape(6.dp))
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
         Text(
             text = statusText,

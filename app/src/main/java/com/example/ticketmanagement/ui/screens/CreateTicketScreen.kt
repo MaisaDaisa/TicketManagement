@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.ticketmanagement.data.Ticket
+import java.util.UUID
 
 @Composable
 fun CreateTicketScreen(
@@ -124,9 +125,11 @@ fun CreateTicketScreen(
         Button(
             onClick = {
                 if (isFormValid) {
+                    val myUuid = UUID.randomUUID().toString()
+
                     onTicketCreated(
                         Ticket(
-                            ticketId = "TKT-${(1000..9999).random()}",
+                            ticketId = myUuid,
                             firstName = firstName.trim(),
                             lastName = lastName.trim(),
                             email = email.trim(),
