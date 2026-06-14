@@ -11,13 +11,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -50,7 +49,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainAppContainer(
     authViewModel: AuthViewModel,
-    ticketViewModel: TicketViewModel
+    ticketViewModel: TicketViewModel,
 ) {
     val userEmail = authViewModel.currentUserEmail
     val currentRole = authViewModel.currentUserRole
@@ -77,8 +76,7 @@ fun MainAppContainer(
         AuthenticatedAppShell(
             authViewModel = authViewModel,
             ticketViewModel = ticketViewModel,
-            currentRole = currentRole ?: UserRole.HELPER,
-            userEmail = userEmail
+            currentRole = currentRole ?: UserRole.HELPER
         )
     }
 }
@@ -89,7 +87,6 @@ fun AuthenticatedAppShell(
     authViewModel: AuthViewModel,
     ticketViewModel: TicketViewModel,
     currentRole: UserRole,
-    userEmail: String
 ) {
     var currentScreen by remember { mutableStateOf("scan") }
 
@@ -157,7 +154,7 @@ fun AuthenticatedAppShell(
                             .size(40.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ExitToApp,
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = "გამოსვლა",
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(20.dp)

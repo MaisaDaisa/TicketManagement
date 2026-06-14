@@ -17,7 +17,7 @@ class TicketViewModel : ViewModel() {
 
     val ticketList = mutableStateListOf<Ticket>()
 
-    private val _isSaving = MutableStateFlow(false)
+    private val _isSaving = MutableStateFlow(value = false)
     val isSaving: StateFlow<Boolean> = _isSaving
 
     private val _uiMessage = MutableStateFlow<String?>(null)
