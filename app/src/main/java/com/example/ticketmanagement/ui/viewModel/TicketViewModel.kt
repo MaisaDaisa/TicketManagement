@@ -30,8 +30,6 @@ class TicketViewModel : ViewModel() {
     val isScanSuccess: StateFlow<Boolean?> = _isScanSuccess
 
     private val _isValidating = MutableStateFlow(false)
-    val isValidating: StateFlow<Boolean> = _isValidating
-
     fun observeTickets() {
         viewModelScope.launch {
             repository.getTicketsRealtime().collect { updatedList ->
