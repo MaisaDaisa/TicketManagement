@@ -6,10 +6,11 @@ enum class UserRole {
 }
 
 data class Ticket(
-    val ticketId: String,
-    val firstName: String,
-    val lastName: String,
-    val seatNumber: String,
-    val email: String,
+    val ticketId: String = "",
+    val firstName: String = "",
+    val lastName: String = "",
+    val seatNumber: String = "",
+    val email: String = "",
+    @field:JvmField
     val isScanned: Boolean = false
 )

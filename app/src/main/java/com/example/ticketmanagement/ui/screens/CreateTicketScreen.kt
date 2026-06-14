@@ -1,19 +1,21 @@
 package com.example.ticketmanagement.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.ticketmanagement.data.Ticket
 
 @Composable
 fun CreateTicketScreen(
+    isSaving: Boolean,
+    uiMessage: String?,
+    onClearMessage: () -> Unit,
     onTicketCreated: (Ticket) -> Unit
 ) {
     var firstName by remember { mutableStateOf("") }
@@ -21,10 +23,17 @@ fun CreateTicketScreen(
     var email by remember { mutableStateOf("") }
     var seatNumber by remember { mutableStateOf("") }
 
+    val context = LocalContext.current
+
+    LaunchedEffect(uiMessage) {
+        uiMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            onClearMessage()
+        }
+    }
+
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
@@ -38,28 +47,32 @@ fun CreateTicketScreen(
             value = firstName,
             onValueChange = { firstName = it },
             label = { Text("სახელი") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isSaving
         )
 
         OutlinedTextField(
             value = lastName,
             onValueChange = { lastName = it },
             label = { Text("გვარი") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isSaving
         )
 
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             label = { Text("ელ. ფოსტა") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isSaving
         )
 
         OutlinedTextField(
             value = seatNumber,
             onValueChange = { seatNumber = it },
             label = { Text("ადგილის ნომერი (უნიკალური)") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isSaving
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -79,9 +92,14 @@ fun CreateTicketScreen(
                 }
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            enabled = !isSaving
         ) {
-            Text("ბილეთის გენერაცია და გაგზავნა", style = MaterialTheme.typography.titleMedium)
+            if (isSaving) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+            } else {
+                Text("ბილეთის გენერაცია და გაგზავნა", style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
 }
