@@ -48,8 +48,16 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.1")
 
+
+    // Auth
+    implementation("androidx.credentials:credentials:1.5.0-rc01")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0-rc01")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
     // Code Scanner
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+
+    // Default
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

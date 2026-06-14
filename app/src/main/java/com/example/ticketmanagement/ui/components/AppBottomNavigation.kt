@@ -32,13 +32,13 @@ fun AppBottomNavigation(
                 icon = { Icon(Icons.Default.AddCircle, contentDescription = null) },
                 label = { Text("შექმნა") }
             )
-        }
 
-        NavigationBarItem(
-            selected = currentScreen == "list",
-            onClick = { onScreenSelected("list") },
-            icon = { Icon(Icons.Default.List, contentDescription = null) },
-            label = { Text("ბილეთები") }
-        )
+            NavigationBarItem(
+                selected = currentScreen == "list",
+                onClick = { onScreenSelected("list") },
+                icon = { Icon(Icons.Default.List, contentDescription = null) },
+                label = { Text("ბილეთები") }
+            )
+        }
     }
 }
