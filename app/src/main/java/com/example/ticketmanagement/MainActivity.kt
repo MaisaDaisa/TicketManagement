@@ -8,8 +8,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainAppContainer(viewModel: TicketViewModel) {
     var currentScreen by remember { mutableStateOf("scan") }
@@ -67,6 +69,20 @@ fun MainAppContainer(viewModel: TicketViewModel) {
         )
     } else {
         Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("ბილეთების მენეჯმენტი") },
+                    actions = {
+                        IconButton(onClick = { viewModel.signOut() }) {
+                            Icon(
+                                imageVector = Icons.Default.ExitToApp,
+                                contentDescription = "Sign Out",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                )
+            },
             bottomBar = {
                 AppBottomNavigation(
                     currentRole = currentRole ?: UserRole.HELPER,

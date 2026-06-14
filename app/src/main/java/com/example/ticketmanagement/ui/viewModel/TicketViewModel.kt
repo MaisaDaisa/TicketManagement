@@ -64,15 +64,19 @@ class TicketViewModel : ViewModel() {
     }
 
     private fun checkUserRole(email: String) {
+        val uid = auth.currentUser?.uid
+
+        if (uid == null) {
+            isAuthenticating = false
+            return
+        }
+
         viewModelScope.launch {
             try {
-                val userQuery = db.collection("users")
-                    .whereEqualTo("email", email)
-                    .get()
-                    .await()
+                val userDoc = db.collection("users").document(uid).get().await()
 
-                if (!userQuery.isEmpty) {
-                    val roleString = userQuery.documents.first().getString("role")
+                if (userDoc.exists()) {
+                    val roleString = userDoc.getString("role")
                     currentUserRole = when (roleString) {
                         "ADMIN" -> UserRole.ADMIN
                         "HELPER" -> UserRole.HELPER
@@ -80,13 +84,14 @@ class TicketViewModel : ViewModel() {
                     }
                 } else {
                     currentUserRole = null
+                    _uiMessage.value = "თქვენი მომხმარებელი ბაზაში არ მოიძებნა!"
                 }
 
                 if (currentUserRole == UserRole.ADMIN) {
                     observeTickets()
                 }
             } catch (e: Exception) {
-                _uiMessage.value = "როლის შემოწმების შეცდომა"
+                _uiMessage.value = "ბაზიდან როლის წაკითხვის შეცდომა: ${e.localizedMessage}"
             } finally {
                 isAuthenticating = false
             }
