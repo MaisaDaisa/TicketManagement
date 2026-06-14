@@ -12,5 +12,6 @@ data class Ticket(
     val seatNumber: String = "",
     val email: String = "",
     @field:JvmField
-    val isScanned: Boolean = false
+    val isScanned: Boolean = false,
+    val qrCodeUrl: String = ""
 )

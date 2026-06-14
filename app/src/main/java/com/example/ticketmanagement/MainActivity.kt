@@ -20,11 +20,13 @@ import com.example.ticketmanagement.ui.screens.CreateTicketScreen
 import com.example.ticketmanagement.ui.screens.LoginScreen
 import com.example.ticketmanagement.ui.screens.ScanScreen
 import com.example.ticketmanagement.ui.screens.TicketListScreen
+import com.example.ticketmanagement.ui.viewModel.AuthViewModel
 import com.example.ticketmanagement.ui.viewModel.TicketViewModel
 import com.google.firebase.FirebaseApp
 
 class MainActivity : ComponentActivity() {
-    private val viewModel: TicketViewModel by viewModels()
+    private val authViewModel: AuthViewModel by viewModels()
+    private val ticketViewModel: TicketViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,7 +34,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MaterialTheme {
-                MainAppContainer(viewModel = viewModel)
+                MainAppContainer(
+                    authViewModel = authViewModel,
+                    ticketViewModel = ticketViewModel
+                )
             }
         }
     }
@@ -40,23 +45,42 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainAppContainer(viewModel: TicketViewModel) {
+fun MainAppContainer(
+    authViewModel: AuthViewModel,
+    ticketViewModel: TicketViewModel
+) {
     var currentScreen by remember { mutableStateOf("scan") }
 
-    val isSaving by viewModel.isSaving.collectAsState()
-    val uiMessage by viewModel.uiMessage.collectAsState()
-    val liveTickets = viewModel.ticketList
+    val isSaving by ticketViewModel.isSaving.collectAsState()
+    val ticketUiMessage by ticketViewModel.uiMessage.collectAsState()
+    val scanResult by ticketViewModel.scanResult.collectAsState()
+    val isScanSuccess by ticketViewModel.isScanSuccess.collectAsState()
+    val liveTickets = ticketViewModel.ticketList
 
-    val userEmail = viewModel.currentUserEmail
-    val currentRole = viewModel.currentUserRole
-    val isAuthenticating = viewModel.isAuthenticating
+    val authUiMessage by authViewModel.uiMessage.collectAsState()
+    val userEmail = authViewModel.currentUserEmail
+    val currentRole = authViewModel.currentUserRole
+    val isAuthenticating = authViewModel.isAuthenticating
 
     val context = LocalContext.current
 
-    LaunchedEffect(uiMessage) {
-        uiMessage?.let {
+    LaunchedEffect(currentRole) {
+        if (currentRole == UserRole.ADMIN) {
+            ticketViewModel.observeTickets()
+        }
+    }
+
+    LaunchedEffect(authUiMessage) {
+        authUiMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            viewModel.clearMessage()
+            authViewModel.clearMessage()
+        }
+    }
+
+    LaunchedEffect(ticketUiMessage) {
+        ticketUiMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            ticketViewModel.clearMessage()
         }
     }
 
@@ -64,7 +88,11 @@ fun MainAppContainer(viewModel: TicketViewModel) {
         LoginScreen(
             isAuthenticating = isAuthenticating,
             onSignInClick = { email, password ->
-                viewModel.signInWithEmail(email, password)
+                authViewModel.signInWithEmail(email, password, onSuccess = { role ->
+                    if (role == UserRole.ADMIN) {
+                        ticketViewModel.observeTickets()
+                    }
+                })
             }
         )
     } else {
@@ -73,7 +101,13 @@ fun MainAppContainer(viewModel: TicketViewModel) {
                 TopAppBar(
                     title = { Text("ბილეთების მენეჯმენტი") },
                     actions = {
-                        IconButton(onClick = { viewModel.signOut() }) {
+                        IconButton(onClick = {
+                            authViewModel.signOut(onSignOutComplete = {
+                                ticketViewModel.clearTicketList()
+                                ticketViewModel.clearScanResult()
+                                currentScreen = "scan"
+                            })
+                        }) {
                             Icon(
                                 imageVector = Icons.Default.ExitToApp,
                                 contentDescription = "Sign Out",
@@ -93,14 +127,20 @@ fun MainAppContainer(viewModel: TicketViewModel) {
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
                 when (currentScreen) {
-                    "scan" -> ScanScreen(onScanTriggered = {})
+                    "scan" -> ScanScreen(
+                        scanResult = scanResult,
+                        isScanSuccess = isScanSuccess,
+                        onScanTriggered = { qrContent ->
+                            ticketViewModel.checkAndValidateTicket(qrContent)
+                        }
+                    )
                     "create" -> if (currentRole == UserRole.ADMIN) {
                         CreateTicketScreen(
                             isSaving = isSaving,
-                            uiMessage = uiMessage,
-                            onClearMessage = { viewModel.clearMessage() },
+                            uiMessage = ticketUiMessage,
+                            onClearMessage = { ticketViewModel.clearMessage() },
                             onTicketCreated = { newTicket ->
-                                viewModel.createTicket(newTicket, onSuccess = {
+                                ticketViewModel.createTicket(newTicket, onSuccess = {
                                     currentScreen = "list"
                                 })
                             }

@@ -57,6 +57,7 @@ dependencies {
     // Code Scanner
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 
+
     // Default
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

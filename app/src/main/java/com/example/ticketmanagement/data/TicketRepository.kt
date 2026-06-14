@@ -22,7 +22,10 @@ class TicketRepository {
                 return Result.failure(Exception("ეს ადგილი უკვე დაკავებულია!"))
             }
 
-            ticketsCollection.document(ticket.ticketId).set(ticket).await()
+            val generatedUrl = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${ticket.ticketId}"
+            val ticketWithQr = ticket.copy(qrCodeUrl = generatedUrl)
+
+            ticketsCollection.document(ticketWithQr.ticketId).set(ticketWithQr).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -39,9 +42,35 @@ class TicketRepository {
 
             if (snapshot != null) {
                 val ticketList = snapshot.toObjects(Ticket::class.java)
-                trySend(ticketList) // Sends updated list to the UI
+                trySend(ticketList)
             }
         }
         awaitClose { listener.remove() }
+    }
+
+    suspend fun validateTicket(ticketId: String): Result<String> {
+        return try {
+            val documentRef = ticketsCollection.document(ticketId)
+            val snapshot = documentRef.get().await()
+
+            if (!snapshot.exists()) {
+                return Result.failure(Exception("ბილეთი ვერ მოიძებნა!"))
+            }
+
+            val isScanned = snapshot.getBoolean("isScanned") ?: false
+            if (isScanned) {
+                val firstName = snapshot.getString("firstName") ?: ""
+                val lastName = snapshot.getString("lastName") ?: ""
+                return Result.failure(Exception("ბილეთი უკვე გამოყენებულია! ($firstName $lastName)"))
+            }
+
+            documentRef.update("isScanned", true).await()
+
+            val firstName = snapshot.getString("firstName") ?: ""
+            val lastName = snapshot.getString("lastName") ?: ""
+            Result.success("ბილეთი ვალიდურია! მომხმარებელი: $firstName $lastName")
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

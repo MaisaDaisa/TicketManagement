@@ -1,15 +1,10 @@
 package com.example.ticketmanagement.ui.viewModel
 
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ticketmanagement.data.Ticket
 import com.example.ticketmanagement.data.TicketRepository
-import com.example.ticketmanagement.data.UserRole
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,12 +13,7 @@ import kotlinx.coroutines.tasks.await
 
 class TicketViewModel : ViewModel() {
     private val repository = TicketRepository()
-    private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
-
-    var currentUserEmail by mutableStateOf<String?>(auth.currentUser?.email)
-    var currentUserRole by mutableStateOf<UserRole?>(null)
-    var isAuthenticating by mutableStateOf(false)
 
     val ticketList = mutableStateListOf<Ticket>()
 
@@ -33,72 +23,16 @@ class TicketViewModel : ViewModel() {
     private val _uiMessage = MutableStateFlow<String?>(null)
     val uiMessage: StateFlow<String?> = _uiMessage
 
-    init {
-        auth.currentUser?.email?.let { email ->
-            checkUserRole(email)
-        }
-    }
+    private val _scanResult = MutableStateFlow<String?>(null)
+    val scanResult: StateFlow<String?> = _scanResult
 
-    fun signInWithEmail(emailInput: String, passwordInput: String) {
-        if (emailInput.isBlank() || passwordInput.isBlank()) {
-            _uiMessage.value = "გთხოვთ შეავსოთ ყველა ველი"
-            return
-        }
+    private val _isScanSuccess = MutableStateFlow<Boolean?>(null)
+    val isScanSuccess: StateFlow<Boolean?> = _isScanSuccess
 
-        viewModelScope.launch {
-            isAuthenticating = true
-            _uiMessage.value = null
-            try {
-                val authResult = auth.signInWithEmailAndPassword(emailInput.trim(), passwordInput).await()
-                val email = authResult.user?.email
+    private val _isValidating = MutableStateFlow(false)
+    val isValidating: StateFlow<Boolean> = _isValidating
 
-                currentUserEmail = email
-                if (email != null) {
-                    checkUserRole(email)
-                }
-            } catch (e: Exception) {
-                _uiMessage.value = "არასწორი მეილი ან პაროლი!"
-                isAuthenticating = false
-            }
-        }
-    }
-
-    private fun checkUserRole(email: String) {
-        val uid = auth.currentUser?.uid
-
-        if (uid == null) {
-            isAuthenticating = false
-            return
-        }
-
-        viewModelScope.launch {
-            try {
-                val userDoc = db.collection("users").document(uid).get().await()
-
-                if (userDoc.exists()) {
-                    val roleString = userDoc.getString("role")
-                    currentUserRole = when (roleString) {
-                        "ADMIN" -> UserRole.ADMIN
-                        "HELPER" -> UserRole.HELPER
-                        else -> null
-                    }
-                } else {
-                    currentUserRole = null
-                    _uiMessage.value = "თქვენი მომხმარებელი ბაზაში არ მოიძებნა!"
-                }
-
-                if (currentUserRole == UserRole.ADMIN) {
-                    observeTickets()
-                }
-            } catch (e: Exception) {
-                _uiMessage.value = "ბაზიდან როლის წაკითხვის შეცდომა: ${e.localizedMessage}"
-            } finally {
-                isAuthenticating = false
-            }
-        }
-    }
-
-    private fun observeTickets() {
+    fun observeTickets() {
         viewModelScope.launch {
             repository.getTicketsRealtime().collect { updatedList ->
                 ticketList.clear()
@@ -108,10 +42,6 @@ class TicketViewModel : ViewModel() {
     }
 
     fun createTicket(ticket: Ticket, onSuccess: () -> Unit) {
-        if (currentUserRole != UserRole.ADMIN) {
-            _uiMessage.value = "ბილეთის შექმნის უფლება არ გაქვთ!"
-            return
-        }
         viewModelScope.launch {
             _isSaving.value = true
             val result = repository.createTicket(ticket)
@@ -125,10 +55,46 @@ class TicketViewModel : ViewModel() {
         }
     }
 
-    fun signOut() {
-        auth.signOut()
-        currentUserEmail = null
-        currentUserRole = null
+    fun checkAndValidateTicket(ticketId: String) {
+        viewModelScope.launch {
+            _isValidating.value = true
+            try {
+                val documentRef = db.collection("tickets").document(ticketId)
+                val snapshot = documentRef.get().await()
+
+                if (!snapshot.exists()) {
+                    _isScanSuccess.value = false
+                    _scanResult.value = "ბილეთი ($ticketId) ბაზაში ვერ მოიძებნა!"
+                    return@launch
+                }
+
+                val isScanned = snapshot.getBoolean("isScanned") ?: false
+                val firstName = snapshot.getString("firstName") ?: ""
+                val lastName = snapshot.getString("lastName") ?: ""
+
+                if (isScanned) {
+                    _isScanSuccess.value = false
+                    _scanResult.value = "ეს ბილეთი უკვე გამოყენებულია!\nმფლობელი: $firstName $lastName"
+                } else {
+                    documentRef.update("isScanned", true).await()
+                    _isScanSuccess.value = true
+                    _scanResult.value = "ბილეთი ვალიდურია!\nწარმატებით გატარდა: $firstName $lastName"
+                }
+            } catch (e: Exception) {
+                _isScanSuccess.value = false
+                _scanResult.value = "შეცდომა: ${e.localizedMessage}"
+            } finally {
+                _isValidating.value = false
+            }
+        }
+    }
+
+    fun clearScanResult() {
+        _scanResult.value = null
+        _isScanSuccess.value = null
+    }
+
+    fun clearTicketList() {
         ticketList.clear()
     }
 
